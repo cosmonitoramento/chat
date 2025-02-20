@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatBot Inteligente com Wit.ai</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+
+    <style>
+        :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #dbe4ee;
+            --success-color: #28a745;
+            --text-color: #333;
+            --light-bg: #f8f9fa;
+            --border-radius: 8px;
+            --shadow: 0 4px 12px rgba(0,0,0,0.15);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background-color: #e3f2fd;
+            color: var(--primary-color);
+        }
+        
+        .status-indicator.connected {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .status-indicator.error {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        #chat-container {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            max-width: 500px;
+            width: 100%;
+            margin: 0 auto;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            max-height: 80vh;
+        }
+
+        #header-bar {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .bot-name {
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+            opacity: 0.8;
+            transition: var(--transition);
+        }
+
+        .control-btn:hover {
+            opacity: 1;
+        }
+
+        #messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            scroll-behavior: smooth;
+            background-color: #f9fafc;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+            word-wrap: break-word;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: var(--primary-color);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .bot-message {
+            align-self: flex-start;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            border-bottom-left-radius: 5px;
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .typing-indicator {
+            display: flex;
+            align-self: flex-start;
+            background-color: var(--secondary-color);
+            padding: 12px 15px;
+            border-radius: 18px;
+            border-bottom-left-radius: 5px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background-color: rgba(0,0,0,0.4);
+            border-radius: 50%;
+            margin-right: 4px;
+            animation: typingAnimation 1s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingAnimation {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.4); }
+            100% { transform: scale(1); }
+        }
+
+        #input-area {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            background-color: white;
+        }
+
+        #user-input {
+            flex-grow: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        #user-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
+        }
+
+        #send-btn {
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 0 20px;
+            margin-left: 10px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #send-btn:hover {
+            background-color: #218838;
+        }
+
+        #send-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            padding: 0 15px 10px;
+        }
+
+        .suggestion-chip {
+            background-color: var(--light-bg);
+            border: 1px solid #ddd;
+            border-radius: 16px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .suggestion-chip:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--primary-color);
+        }
+
+        .error-message {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 8px;
+            margin: 10px 15px;
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .settings-panel {
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 15px;
+            width: 250px;
+            z-index: 100;
+            display: none;
+        }
+
+        .settings-panel.active {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .setting-item {
+            margin-bottom: 15px;
+        }
+
+        .setting-item label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .setting-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .setting-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .setting-btn {
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .save-btn {
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+        }
+
+        .save-btn:hover {
+            background-color: #218838;
+        }
+
+        .cancel-btn {
+            background-color: transparent;
+            border: 1px solid #ddd;
+        }
+
+        .cancel-btn:hover {
+            background-color: #f1f1f1;
+        }
+        
+        @media (max-width: 768px) {
+            #chat-container {
+                max-height: 85vh;
+                max-width: 100%;
+            }
+            
+            .message {
+                max-width: 85%;
+            }
+        }
+        
+        .theme-dark {
+            --primary-color: #3a506b;
+            --secondary-color: #1c2541;
+            --success-color: #2e7d32;
+            --text-color: #e0e0e0;
+            --light-bg: #2c3e50;
+            background: linear-gradient(135deg, #1c2841 0%, #2c3e50 100%);
+        }
+        
+        .theme-dark #chat-container {
+            background: #0f172a;
+        }
+        
+        .theme-dark #messages {
+            background-color: #1e293b;
+        }
+        
+        .theme-dark .bot-message {
+            background-color: #334155;
+            color: #e2e8f0;
+        }
+        
+        .theme-dark #input-area {
+            background-color: #1e293b;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .theme-dark #user-input {
+            background-color: #334155;
+            color: #e2e8f0;
+            border-color: #475569;
+        }
+        
+        .theme-dark .suggestion-chip {
+            background-color: #334155;
+            border-color: #475569;
+            color: #e2e8f0;
+        }
+        
+        .theme-dark .suggestion-chip:hover {
+            background-color: #475569;
+        }
+        
+        .theme-dark .settings-panel {
+            background-color: #1e293b;
+            color: #e2e8f0;
+        }
+        
+        .theme-dark .setting-input {
+            background-color: #334155;
+            color: #e2e8f0;
+            border-color: #475569;
+        }
+        
+        .theme-dark .cancel-btn {
+            border-color: #475569;
+            color: #e2e8f0;
+        }
+        
+        .theme-dark .cancel-btn:hover {
+            background-color: #334155;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Assistente Virtual</h1>
+    <div id="connection-status" class="status-indicator">Inicializando...</div>
+</header>
+
+<div id="chat-container">
+    <div id="header-bar">
+        <div class="bot-name">
+            <i class="fas fa-robot"></i>
+            <span>Assistente Virtual</span>
+        </div>
+        <div class="controls">
+            <button id="theme-toggle" class="control-btn" title="Alternar tema">
+                <i class="fas fa-moon"></i>
+            </button>
+            <button id="settings-btn" class="control-btn" title="Configurações">
+                <i class="fas fa-cog"></i>
+            </button>
+            <button id="clear-chat" class="control-btn" title="Limpar conversa">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+    
+    <div id="messages"></div>
+    <div id="error-box" class="error-message"></div>
+    
+    <div class="suggestions" id="suggestions"></div>
+    
+    <div id="input-area">
+        <input type="text" id="user-input" placeholder="Digite sua mensagem..." autocomplete="off">
+        <button id="send-btn" disabled>
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+</div>
+
+<div id="settings-panel" class="settings-panel">
+    <div class="setting-item">
+        <label for="wit-token">Chave da API Wit.ai</label>
+        <input type="password" id="wit-token" class="setting-input" placeholder="Cole sua chave da API aqui">
+    </div>
+    <div class="setting-item">
+        <label for="bot-name">Nome do Assistente</label>
+        <input type="text" id="bot-name" class="setting-input" placeholder="Assistente Virtual">
+    </div>
+    <div class="setting-item">
+        <label for="language-select">Idioma</label>
+        <select id="language-select" class="setting-input">
+            <option value="pt_BR">Português (Brasil)</option>
+            <option value="en_US">English (US)</option>
+            <option value="es_ES">Español</option>
+        </select>
+    </div>
+    <div class="setting-actions">
+        <button id="cancel-settings" class="setting-btn cancel-btn">Cancelar</button>
+        <button id="save-settings" class="setting-btn save-btn">Salvar</button>
+    </div>
+</div>
+
+<script>
+    // Configurações e variáveis globais
+    const CONFIG = {
+        witApiVersion: '20230215',
+        defaultLanguage: 'pt_BR',
+        typingDelay: 300,
+        maxRetries: 3,
+        retryDelay: 1000,
+        suggestionCount: 4,
+        debounceTime: 300,
+        messageHistoryLimit: 100
+    };
+    
+   let witToken = localStorage.getItem('witToken') || 'U6MFV5FF6LXC7RCFSEMEZ2BAYD5L3LUG';
+    let botName = localStorage.getItem('botName') || 'Assistente Virtual';
+    let userLanguage = localStorage.getItem('language') || CONFIG.defaultLanguage;
+    let isDarkMode = localStorage.getItem('darkMode') === 'true';
+    let isTyping = false;
+    let retryCount = 0;
+    let typingIndicator = null;
+    let messageQueue = [];
+    let processingQueue = false;
+    let lastUserMessageTime = 0;
+    let suggestedResponses = [];
+    
+    // Elementos do DOM
+    const elements = {
+        messagesDiv: document.getElementById('messages'),
+        userInput: document.getElementById('user-input'),
+        sendButton: document.getElementById('send-btn'),
+        connectionStatus: document.getElementById('connection-status'),
+        themeToggle: document.getElementById('theme-toggle'),
+        settingsBtn: document.getElementById('settings-btn'),
+        clearChatBtn: document.getElementById('clear-chat'),
+        errorBox: document.getElementById('error-box'),
+        suggestionArea: document.getElementById('suggestions'),
+        settingsPanel: document.getElementById('settings-panel'),
+        witTokenInput: document.getElementById('wit-token'),
+        botNameInput: document.getElementById('bot-name'),
+        languageSelect: document.getElementById('language-select'),
+        saveSettingsBtn: document.getElementById('save-settings'),
+        cancelSettingsBtn: document.getElementById('cancel-settings'),
+        botNameDisplay: document.querySelector('.bot-name span')
+    };
+    
+    // Traduções
+    const translations = {
+        pt_BR: {
+            welcomeMessage: "Olá! Como posso ajudar você hoje?",
+            placeholderText: "Digite sua mensagem...",
+            connectionError: "Erro de conexão. Verifique sua internet.",
+            apiError: "Erro na API. Verifique sua chave Wit.ai.",
+            clearConfirm: "Tem certeza que deseja limpar toda a conversa?",
+            suggestions: ["Olá", "Como você funciona?", "Preciso de ajuda", "Tchau"],
+            unknownIntent: "Desculpe, não entendi. Pode reformular?",
+            offlineMessage: "Parece que você está offline. Verifique sua conexão.",
+            tokenMissing: "Por favor, configure sua chave Wit.ai nas configurações.",
+            statusConnected: "Conectado",
+            statusError: "Erro de conexão",
+            statusInitializing: "Inicializando..."
+        },
+        en_US: {
+            welcomeMessage: "Hello! How can I help you today?",
+            placeholderText: "Type your message...",
+            connectionError: "Connection error. Check your internet.",
+            apiError: "API error. Check your Wit.ai key.",
+            clearConfirm: "Are you sure you want to clear the entire conversation?",
+            suggestions: ["Hello", "How do you work?", "I need help", "Goodbye"],
+            unknownIntent: "Sorry, I didn't understand. Can you rephrase that?",
+            offlineMessage: "It seems you're offline. Please check your connection.",
+            tokenMissing: "Please set up your Wit.ai key in settings.",
+            statusConnected: "Connected",
+            statusError: "Connection error",
+            statusInitializing: "Initializing..."
+        },
+        es_ES: {
+            welcomeMessage: "¡Hola! ¿Cómo puedo ayudarte hoy?",
+            placeholderText: "Escribe tu mensaje...",
+            connectionError: "Error de conexión. Comprueba tu internet.",
+            apiError: "Error en la API. Verifica tu clave de Wit.ai.",
+            clearConfirm: "¿Estás seguro de que quieres borrar toda la conversación?",
+            suggestions: ["Hola", "¿Cómo funcionas?", "Necesito ayuda", "Adiós"],
+            unknownIntent: "Lo siento, no entendí. ¿Puedes reformular?",
+            offlineMessage: "Parece que estás sin conexión. Verifica tu internet.",
+            tokenMissing: "Por favor, configura tu clave de Wit.ai en ajustes.",
+            statusConnected: "Conectado",
+            statusError: "Error de conexión",
+            statusInitializing: "Inicializando..."
+        }
+    };
+    
+    // Mapeamento avançado de intenções
+    const intentHandlers = {
+        greeting: (entities) => {
+            const timeOfDay = new Date().getHours();
+            if (timeOfDay < 12) return getText('welcomeMessage').replace('Olá', 'Bom dia');
+            if (timeOfDay < 18) return getText('welcomeMessage').replace('Olá', 'Boa tarde');
+            return getText('welcomeMessage').replace('Olá', 'Boa noite');
+        },
+        goodbye: () => {
+            const responses = {
+                pt_BR: ["Até logo! Tenha um bom dia!", "Foi bom conversar com você!", "Até a próxima!"],
+                en_US: ["Goodbye! Have a nice day!", "It was nice talking to you!", "See you next time!"],
+                es_ES: ["¡Hasta luego! ¡Que tengas un buen día!", "¡Fue bueno hablar contigo!", "¡Hasta la próxima!"]
+            };
+            return getRandomItem(responses[userLanguage]);
+        },
+        help: (entities) => {
+            const topic = getEntityValue(entities, 'topic');
+            if (topic) {
+                return getHelpByTopic(topic);
+            }
+            return {
+                pt_BR: "Como posso ajudar? Posso responder perguntas, dar assistência ou simplesmente conversar.",
+                en_US: "How can I help? I can answer questions, provide assistance, or just chat.",
+                es_ES: "¿Cómo puedo ayudar? Puedo responder preguntas, brindar asistencia o simplemente charlar."
+            }[userLanguage];
+        },
+        weather: (entities) => {
+            const location = getEntityValue(entities, 'location');
+            if (location) {
+                return {
+                    pt_BR: `Não posso verificar o clima em ${location} agora, mas posso recomendar um site de previsão do tempo.`,
+                    en_US: `I can't check the weather in ${location} right now, but I can recommend a weather forecast website.`,
+                    es_ES: `No puedo verificar el clima en ${location} ahora, pero puedo recomendar un sitio web de pronóstico del tiempo.`
+                }[userLanguage];
+            }
+            return {
+                pt_BR: "Você gostaria de saber a previsão do tempo para qual local?",
+                en_US: "Which location would you like to know the weather forecast for?",
+                es_ES: "¿Para qué lugar te gustaría saber el pronóstico del tiempo?"
+            }[userLanguage];
+        },
+        thanks: () => {
+            const responses = {
+                pt_BR: ["De nada!", "Disponha!", "É um prazer ajudar!", "Por nada!"],
+                en_US: ["You're welcome!", "Anytime!", "It's my pleasure to help!", "No problem!"],
+                es_ES: ["¡De nada!", "¡A tu disposición!", "¡Es un placer ayudar!", "¡No hay problema!"]
+            };
+            return getRandomItem(responses[userLanguage]);
+        },
+        joke: () => {
+            const jokes = {
+                pt_BR: [
+                    "Por que o livro de matemática ficou triste? Porque tinha muitos problemas.",
+                    "O que o zero disse para o oito? Belo cinto!",
+                    "Por que o computador foi ao médico? Porque pegou um vírus!"
+                ],
+                en_US: [
+                    "Why don't scientists trust atoms? Because they make up everything!",
+                    "What did zero say to eight? Nice belt!",
+                    "Why did the computer go to the doctor? Because it had a virus!"
+                ],
+                es_ES: [
+                    "¿Por qué el libro de matemáticas estaba triste? Porque tenía muchos problemas.",
+                    "¿Qué le dijo el cero al ocho? ¡Lindo cinturón!",
+                    "¿Por qué la computadora fue al médico? ¡Porque tenía un virus!"
+                ]
+            };
+            return getRandomItem(jokes[userLanguage]);
+        }
+    };
+    
+    // Inicialização
+
+    console.log('Elementos carregados:', elements);
+console.log('Botão de envio:', elements.sendButton);
+console.log('WitToken:', witToken);
+
+// Forçar habilitação do botão
+elements.sendButton.disabled = false;
+    document.addEventListener('DOMContentLoaded', initialize);
+    
+    function initialize() {
+        loadSettings();
+        setupEventListeners();
+        applyTheme();
+        checkConnectionAndWitToken();
+        
+        // Exibe mensagem de boas-vindas
+        if (getMessageCount() === 0) {
+            setTimeout(() => {
+                addBotMessage(getText('welcomeMessage'));
+                updateSuggestions(getText('suggestions'));
+            }, 1000);
+        } else {
+            loadSavedMessages();
+        }
+    }
+    
+    function loadSettings() {
+        // Carrega configurações salvas
+        elements.witTokenInput.value = witToken;
+        elements.botNameInput.value = botName;
+        elements.languageSelect.value = userLanguage;
+        elements.botNameDisplay.textContent = botName;
+    }
+    
+    function setupEventListeners() {
+        // Configurar eventos de UI
+        elements.sendButton.addEventListener('click', handleSendMessage);
+        elements.userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSendMessage();
+        });
+        elements.userInput.addEventListener('input', handleInputChange);
+        
+        elements.themeToggle.addEventListener('click', toggleTheme);
+        elements.settingsBtn.addEventListener('click', toggleSettings);
+        elements.clearChatBtn.addEventListener('click', confirmClearChat);
+        
+        elements.saveSettingsBtn.addEventListener('click', saveSettings);
+        elements.cancelSettingsBtn.addEventListener('click', () => {
+            elements.settingsPanel.classList.remove('active');
+            loadSettings(); // Restaura valores anteriores
+        });
+        
+        // Detectar estado online/offline
+        window.addEventListener('online', updateConnectionStatus);
+        window.addEventListener('offline', updateConnectionStatus);
+        
+        // Fechar configurações ao clicar fora do painel
+        document.addEventListener('click', (e) => {
+            if (elements.settingsPanel.classList.contains('active') && 
+                !elements.settingsPanel.contains(e.target) && 
+                e.target !== elements.settingsBtn) {
+                elements.settingsPanel.classList.remove('active');
+            }
+        });
+    }
+    
+    function updateConnectionStatus() {
+        if (navigator.onLine) {
+            elements.connectionStatus.textContent = getText('statusConnected');
+            elements.connectionStatus.classList.add('connected');
+            elements.connectionStatus.classList.remove('error');
+            elements.errorBox.style.display = 'none';
+        } else {
+            elements.connectionStatus.textContent = getText('statusError');
+            elements.connectionStatus.classList.remove('connected');
+            elements.connectionStatus.classList.add('error');
+            showError(getText('offlineMessage'));
+        }
+    }
+    
+    function checkConnectionAndWitToken() {
+        updateConnectionStatus();
+        
+        if (!witToken) {
+            elements.sendButton.disabled = true;
+            showError(getText('tokenMissing'));
+        } else {
+            elements.sendButton.disabled = false;
+            elements.errorBox.style.display = 'none';
+        }
+    }
+    
+    function showError(message) {
+        elements.errorBox.textContent = message;
+        elements.errorBox.style.display = 'block';
+        setTimeout(() => {
+            elements.errorBox.style.display = 'none';
+        }, 5000);
+    }
+    
+    // Manipulação de mensagens e respostas
+    async function handleSendMessage() {
+        const userMessage = elements.userInput.value.trim();
+        if (!userMessage || isTyping) return;
+        
+        // Verifica conexão e token
+        if (!navigator.onLine) {
+            showError(getText('offlineMessage'));
+            return;
+        }
+        
+        if (!witToken) {
+            showError(getText('tokenMissing'));
+            elements.settingsPanel.classList.add('active');
+            return;
+        }
+        
+        // Adiciona mensagem do usuário e limpa input
+        addUserMessage(userMessage);
+        elements.userInput.value = '';
+        elements.sendButton.disabled = true;
+        
+        // Previne spam de mensagens (limita a uma mensagem a cada 500ms)
+        const now = Date.now();
+        if (now - lastUserMessageTime < 500) {
+            return;
+        }
+        lastUserMessageTime = now;
+        
+        // Adiciona à fila de processamento
+        messageQueue.push(userMessage);
+        if (!processingQueue) {
+            processMessageQueue();
+        }
+    }
+    
+    async function processMessageQueue() {
+        if (messageQueue.length === 0) {
+            processingQueue = false;
+            return;
+        }
+        
+        processingQueue = true;
+        const message = messageQueue.shift();
+        
+        // Mostra indicador de digitação
+        showTypingIndicator();
+        
+        try {
+            await getBotResponse(message);
+        } catch (error) {
+            console.error('Error processing message:', error);
+            hideTypingIndicator();
+            addBotMessage(getText('connectionError'));
+        }
+        
+        // Continua processando a fila
+        setTimeout(() => {
+            processMessageQueue();
+        }, 1000);
+    }
+    
+    async function getBotResponse(message) {
+        try {
+            // Mostra indicador "digitando..."
+            showTypingIndicator();
+            
+            const url = new URL(`https://api.wit.ai/message`);
+            url.searchParams.append('v', CONFIG.witApiVersion);
+            url.searchParams.append('q', message);
+            url.searchParams.append('locale', userLanguage);
+            
+            const response = await fetchWithRetry(url, {
+                headers: { 'Authorization': `Bearer ${witToken}` },
+                method: 'GET'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            
+            // Simula tempo de digitação baseado no tamanho da resposta
+            const typingTime = Math.min(Math.max(CONFIG.typingDelay, message.length * 20), 2000);
+            await delay(typingTime);
+            
+            // Processa a resposta
+            const botResponse = handleWitResponse(data);
+            hideTypingIndicator();
+            addBotMessage(botResponse);
+            
+            // Atualiza sugestões
+            const newSuggestions = generateContextualSuggestions(data, message);
+            updateSuggestions(newSuggestions);
+            
+            // Habilita botão de envio
+            elements.sendButton.disabled = elements.userInput.value.trim() === '';
+            
+            // Reseta contador de tentativas
+            retryCount = 0;
+            
+        } catch (error) {
+            console.error('Error getting bot response:', error);
+            hideTypingIndicator();
+            
+            if (retryCount < CONFIG.maxRetries) {
+                retryCount++;
+                showError(`Tentativa ${retryCount}/${CONFIG.maxRetries}. Reconectando...`);
+                await delay(CONFIG.retryDelay);
+                return getBotResponse(message);
+            }
+            
+            addBotMessage(error.message.includes('401') ? 
+                getText('apiError') : getText('connectionError'));
+            
+            retryCount = 0;
+        }
+    }
+    
+    function handleWitResponse(data) {
+        // Extrai a intenção com maior confiança
+        const intent = getTopIntent(data);
+        const entities = data.entities || {};
+        
+        console.log('Wit.ai response:', data);
+        console.log('Detected intent:', intent);
+        
+        // Usa o handler específico ou resposta default
+        if (intent && intentHandlers[intent]) {
+            return intentHandlers[intent](entities);
+        }
+        
+        // Tenta usar resposta direta se disponível
+        if (data.text) {
+            return data.text;
+        }
+        
+        return getText('unknownIntent');
+    }
+    
+    function getTopIntent(data) {
+        if (!data || !data.intents || data.intents.length === 0) {
+            return null;
+        }
+        
+        // Filtra intenções com confiança mínima de 0.7
+        const validIntents = data.intents.filter(intent => intent.confidence > 0.7);
+        if (validIntents.length === 0) return null;
+        
+        // Retorna a intenção com maior confiança
+        return validIntents[0].name;
+    }
+    
+    function getEntityValue(entities, entityName) {
+        if (!entities || !entities[entityName] || !entities[entityName].length) {
+            return null;
+        }
+        return entities[entityName][0].value;
+    }
+    
+    // Funções de UI
+    function addUserMessage(text) {
+        addMessage(text, 'user-message');
+        saveMessageToHistory(text, 'user');
+    }
+    
+    function addBotMessage(text) {
+        addMessage(text, 'bot-message');
+        saveMessageToHistory(text, 'bot');
+    }
+    
+    function addMessage(text, className) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${className}`;
+        
+        // Conteúdo da mensagem
+        messageDiv.textContent = text;
+        
+        // Adiciona timestamp
+        const timeSpan = document.createElement('div');
+        timeSpan.className = 'message-time';
+        timeSpan.textContent = formatTime(new Date());
+        messageDiv.appendChild(timeSpan);
+        
+        elements.messagesDiv.appendChild(messageDiv);
+        scrollToBottom();
+    }
+    
+    function showTypingIndicator() {
+        if (typingIndicator) return;
+        
+        isTyping = true;
+        typingIndicator = document.createElement('div');
+        typingIndicator.className = 'typing-indicator';
+        
+        for (let i = 0; i < 3; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'typing-dot';
+            typingIndicator.appendChild(dot);
+        }
+        
+        elements.messagesDiv.appendChild(typingIndicator);
+        scrollToBottom();
+    }
+    
+    function hideTypingIndicator() {
+        if (typingIndicator) {
+            typingIndicator.remove();
+            typingIndicator = null;
+            isTyping = false;
+        }
+    }
+    
+    function scrollToBottom() {
+        elements.messagesDiv.scrollTop = elements.messagesDiv.scrollHeight;
+    }
+    
+    function handleInputChange() {
+        elements.sendButton.disabled = elements.userInput.value.trim() === '';
+    }
+    
+    // Gerenciamento de sugestões
+    function updateSuggestions(suggestions) {
+        elements.suggestionArea.innerHTML = '';
+        suggestedResponses = suggestions || [];
+        
+        suggestedResponses.forEach(suggestion => {
+            const chip = document.createElement('div');
+            chip.className = 'suggestion-chip';
+            chip.textContent = suggestion;
+            chip.addEventListener('click', () => {
+                elements.userInput.value = suggestion;
+                handleSendMessage();
+            });
+            elements.suggestionArea.appendChild(chip);
+        });
+    }
+    
+    function generateContextualSuggestions(witResponse, lastMessage) {
+        // Gera sugestões baseadas no contexto atual
+        const intent = getTopIntent(witResponse);
+        
+        // Sugestões específicas por intenção
+        const intentSuggestions = {
+            greeting: {
+                pt_BR: ["Como você funciona?", "O que você pode fazer?", "Preciso de ajuda", "Conte uma piada"],
+                en_US: ["How do you work?", "What can you do?", "I need help", "Tell me a joke"],
+                es_ES: ["¿Cómo funcionas?", "¿Qué puedes hacer?", "Necesito ayuda", "Cuéntame un chiste"]
+            },
+            help: {
+                pt_BR: ["Configurações", "Comandos disponíveis", "Como usar o chatbot", "Voltar ao início"],
+                en_US: ["Settings", "Available commands", "How to use the chatbot", "Back to start"],
+                es_ES: ["Configuración", "Comandos disponibles", "Cómo usar el chatbot", "Volver al inicio"]
+            },
+            weather: {
+                pt_BR: ["Clima em São Paulo", "Temperatura hoje", "Vai chover?", "Previsão para amanhã"],
+                en_US: ["Weather in New York", "Temperature today", "Will it rain?", "Forecast for tomorrow"],
+                es_ES: ["Clima en Madrid", "Temperatura hoy", "¿Va a llover?", "Pronóstico para mañana"]
+            },
+            joke: {
+                pt_BR: ["Outra piada", "Mais uma", "Conta outra", "Obrigado"],
+                en_US: ["Another joke", "One more", "Tell me another", "Thanks"],
+                es_ES: ["Otro chiste", "Uno más", "Cuéntame otro", "Gracias"]
+            }
+        };
+        
+        if (intent && intentSuggestions[intent]) {
+            return intentSuggestions[intent][userLanguage];
+        }
+        
+        // Sugestões default
+        return getText('suggestions');
+    }
+    
+    // Gerenciamento de configurações
+    function toggleSettings() {
+        elements.settingsPanel.classList.toggle('active');
+    }
+    
+    function saveSettings() {
+        // Salva as configurações
+        const newToken = elements.witTokenInput.value.trim();
+        const newBotName = elements.botNameInput.value.trim() || 'Assistente Virtual';
+        const newLanguage = elements.languageSelect.value;
+        
+        // Atualiza variáveis e localStorage
+        witToken = newToken;
+        botName = newBotName;
+        userLanguage = newLanguage;
+        
+        localStorage.setItem('witToken', witToken);
+        localStorage.setItem('botName', botName);
+        localStorage.setItem('language', userLanguage);
+        
+        // Atualiza UI
+        elements.botNameDisplay.textContent = botName;
+        elements.userInput.placeholder = getText('placeholderText');
+        elements.settingsPanel.classList.remove('active');
+        
+        // Verifica token e conexão
+        checkConnectionAndWitToken();
+        
+        // Adiciona mensagem informativa
+        const messages = {
+            pt_BR: "Configurações atualizadas com sucesso!",
+            en_US: "Settings updated successfully!",
+            es_ES: "¡Configuración actualizada con éxito!"
+        };
+        addBotMessage(messages[userLanguage]);
+    }
+    
+    function toggleTheme() {
+        isDarkMode = !isDarkMode;
+        localStorage.setItem('darkMode', isDarkMode);
+        applyTheme();
+    }
+    
+    function applyTheme() {
+        if (isDarkMode) {
+            document.body.classList.add('theme-dark');
+            elements.themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+        } else {
+            document.body.classList.remove('theme-dark');
+            elements.themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+        }
+    }
+    
+    function confirmClearChat() {
+        if (confirm(getText('clearConfirm'))) {
+            clearChat();
+        }
+    }
+    
+    function clearChat() {
+        // Limpa mensagens da UI e localStorage
+        elements.messagesDiv.innerHTML = '';
+        localStorage.removeItem('chatMessages');
+        
+        // Adiciona mensagem de boas-vindas
+        setTimeout(() => {
+            addBotMessage(getText('welcomeMessage'));
+            updateSuggestions(getText('suggestions'));
+        }, 500);
+    }
+    
+    // Armazenamento de mensagens
+    function saveMessageToHistory(text, sender) {
+        const chatMessages = getMessagesFromStorage();
+        
+        // Limita o histórico
+        if (chatMessages.length >= CONFIG.messageHistoryLimit) {
+            chatMessages.shift(); // Remove a mensagem mais antiga
+        }
+        
+        chatMessages.push({
+            text,
+            sender,
+            timestamp: new Date().toISOString()
+        });
+        
+        localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
+    }
+    
+    function getMessagesFromStorage() {
+        try {
+            return JSON.parse(localStorage.getItem('chatMessages')) || [];
+        } catch (error) {
+            console.error('Error parsing saved messages:', error);
+            return [];
+        }
+    }
+    
+    function getMessageCount() {
+        return getMessagesFromStorage().length;
+    }
+    
+    function loadSavedMessages() {
+        const messages = getMessagesFromStorage();
+        if (messages.length === 0) return;
+        
+        // Limita a carregar as últimas 30 mensagens para performance
+        const recentMessages = messages.slice(-30);
+        
+        // Adiciona as mensagens na UI
+        recentMessages.forEach(msg => {
+            if (msg.sender === 'user') {
+                addUserMessage(msg.text);
+            } else {
+                addBotMessage(msg.text);
+            }
+        });
+        
+        // Atualiza sugestões com base na última interação
+        if (messages.length > 0) {
+            updateSuggestions(getText('suggestions'));
+        }
+    }
+    
+    // Funções auxiliares
+    function getHelpByTopic(topic) {
+        const helpTopics = {
+            commands: {
+                pt_BR: "Comandos disponíveis: cumprimentar, despedir, ajuda, clima, piada.",
+                en_US: "Available commands: greeting, goodbye, help, weather, joke.",
+                es_ES: "Comandos disponibles: saludo, despedida, ayuda, clima, chiste."
+            },
+            settings: {
+                pt_BR: "Nas configurações você pode alterar: idioma, tema, nome do bot e chave da API.",
+                en_US: "In settings you can change: language, theme, bot name and API key.",
+                es_ES: "En configuración puedes cambiar: idioma, tema, nombre del bot y clave de API."
+            },
+            witai: {
+                pt_BR: "Wit.ai é uma plataforma de processamento de linguagem natural que ajuda a entender suas mensagens.",
+                en_US: "Wit.ai is a natural language processing platform that helps understand your messages.",
+                es_ES: "Wit.ai es una plataforma de procesamiento de lenguaje natural que ayuda a entender tus mensajes."
+            }
+        };
+        
+        if (helpTopics[topic]) {
+            return helpTopics[topic][userLanguage];
+        }
+        
+        return getText('help');
+    }
+    
+    function getText(key) {
+        return translations[userLanguage][key] || key;
+    }
+    
+    function getRandomItem(array) {
+        return array[Math.floor(Math.random() * array.length)];
+    }
+    
+    function formatTime(date) {
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    
+    async function fetchWithRetry(url, options, maxRetries = CONFIG.maxRetries) {
+        let lastError;
+        
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+            try {
+                return await fetch(url, options);
+            } catch (error) {
+                console.warn(`Attempt ${attempt + 1}/${maxRetries} failed:`, error);
+                lastError = error;
+                await delay(CONFIG.retryDelay * (attempt + 1)); // Exponential backoff
+            }
+        }
+        
+        throw lastError;
+    }
+    
+    function delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    
+    // Detecção de atividade do usuário
+    let inactivityTimer;
+    
+    function resetInactivityTimer() {
+        clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(suggestReengagement, 5 * 60 * 1000); // 5 minutos
+    }
+    
+    function suggestReengagement() {
+        const suggestions = {
+            pt_BR: ["Ainda está aí?", "Precisando de mais alguma coisa?", "Posso ajudar com mais alguma coisa?"],
+            en_US: ["Are you still there?", "Do you need anything else?", "Can I help with anything else?"],
+            es_ES: ["¿Sigues ahí?", "¿Necesitas algo más?", "¿Puedo ayudarte con algo más?"]
+        };
+        
+        // Só sugere reengajamento se tiver pelo menos uma interação anterior
+        if (getMessageCount() > 1) {
+            addBotMessage(getRandomItem(suggestions[userLanguage]));
+        }
+    }
+    
+    // Inicia timer de inatividade e monitora eventos
+    resetInactivityTimer();
+    ['click', 'keypress', 'scroll', 'mousemove', 'touchstart'].forEach(event => {
+        document.addEventListener(event, resetInactivityTimer);
+    });
+</script>
+
+</body>
+</html>
